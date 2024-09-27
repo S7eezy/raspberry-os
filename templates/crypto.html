@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Ticker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style" onload="this.rel='stylesheet'">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div id="header">
+        <button id="home-button"><img src="/static/icons/theme/light/home.png" alt="Home"></button>
+        <button id="settings-button"><img src="/static/icons/theme/light/settings.png" alt="Settings"></button>
+        <button id="theme-toggle-button"><img src="/static/icons/theme/light/dark.png" alt="Toggle Theme"></button>
+    </div>
+    <div id="crypto-app"></div>
+    <div id="config-screen" style="display: none;"></div>
+    <script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "strict": true,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "allowSyntheticDefaultImports": true,
+        "lib": ["es2017", "dom"]
+      },
+  "outDir": "static/js/",
+  "include": [
+    "static/js/**/*.ts"
+  ]
+}

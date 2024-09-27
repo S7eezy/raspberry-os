@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=RaspberryOS
+Comment=Starts the Flask server and displays it in Chromium kiosk mode
+Exec=/home/pi/raspberryOS/start.sh
+Icon=chromium-browser
+Terminal=false
+Type=Application
+Categories=Utility;Application;
