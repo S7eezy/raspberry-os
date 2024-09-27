@@ -1,13 +1,18 @@
 #!/bin/bash
 
-# System updates, dependencies
+# System updates && basic dependencies
 sudo apt update -y
 sudo apt full-upgrade -y
 sudo apt install -y git python3 python3-pip unclutter chromium-browser
 sudo apt install --no-install-recommends xserver-xorg xinit
-
 sudo apt purge -y libreoffice* wolfram-engine sonic-pi scratch nuscratch idle3 smartsim python3-pygame
 sudo apt autoremove -y
+
+# Nodejs && typescript
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 
+sudo apt-get install -y nodejs
+sudo npm install -g typescript
+
 
 # Disable unused default services
 sudo systemctl disable triggerhappy.service
