@@ -36,12 +36,14 @@ for service in \
     sudo systemctl disable "$service"
 done
 
-# Boot without windows manager
+# Set default target to multi-user to save energy
 sudo systemctl set-default multi-user.target
+
+# Allow 'pi' user to start X
 sudo bash -c 'echo "allowed_users=anybody" > /etc/X11/Xwrapper.config'
 
 # Create a script to start the Flask app with git pull and TypeScript compilation
-sudo tee /home/pi/raspberryOS/start_flask_app.sh > /dev/null << EOF
+sudo tee /home/pi/raspberryOS/start_flask_app.sh > /dev/null << 'EOF'
 #!/bin/bash
 cd /home/pi/raspberryOS
 git pull
@@ -51,7 +53,7 @@ EOF
 sudo chmod +x /home/pi/raspberryOS/start_flask_app.sh
 
 # Create a systemd service for the Flask app
-sudo tee /etc/systemd/system/flaskapp.service > /dev/null << EOF
+sudo tee /etc/systemd/system/flaskapp.service > /dev/null << 'EOF'
 [Unit]
 Description=Flask Application
 After=network.target
@@ -68,8 +70,9 @@ WantedBy=multi-user.target
 EOF
 
 # Create a script to start Chromium in kiosk mode with optimized flags
-sudo tee /usr/local/bin/start_chromium.sh > /dev/null << EOF
+sudo tee /usr/local/bin/start_chromium.sh > /dev/null << 'EOF'
 #!/bin/bash
+export DISPLAY=:0
 xset s off       # Disable screen saver
 xset -dpms       # Disable power management
 xset s noblank   # Prevent screen blanking
@@ -98,40 +101,46 @@ exec chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost
 EOF
 sudo chmod +x /usr/local/bin/start_chromium.sh
 
-# Create a systemd service to start X and Chromium without 'startx'
-sudo tee /etc/systemd/system/chromium.service > /dev/null << EOF
-[Unit]
-Description=Start X and Chromium in kiosk mode
-After=network.target flaskapp.service
+# Re-enable getty on tty1
+sudo systemctl enable getty@tty1.service
 
+# Configure autologin on tty1
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+sudo tee /etc/systemd/system/getty@tty1.service.d/override.conf > /dev/null << 'EOF'
 [Service]
-User=pi
-Environment=DISPLAY=:0
-ExecStart=/usr/bin/xinit /usr/local/bin/start_chromium.sh -- :0 -nolisten tcp vt1
-Restart=always
-RestartSec=5
+ExecStart=
+ExecStart=-/sbin/agetty --autologin pi --noclear %I $TERM
+EOF
 
-[Install]
-WantedBy=multi-user.target
+# Reload systemd daemon and restart getty service
+sudo systemctl daemon-reload
+sudo systemctl restart getty@tty1.service
+
+# Create .xinitrc to start Chromium
+sudo -u pi tee /home/pi/.xinitrc > /dev/null << 'EOF'
+#!/bin/sh
+exec /usr/local/bin/start_chromium.sh
+EOF
+sudo chmod +x /home/pi/.xinitrc
+
+# Update .bash_profile to start X on tty1
+sudo -u pi tee -a /home/pi/.bash_profile > /dev/null << 'EOF'
+
+if [ -z "\$DISPLAY" ] && [ "\$(tty)" = "/dev/tty1" ]; then
+  startx -- -nocursor
+fi
 EOF
 
 # Clone the repository
-git clone https://github.com/S7eezy/raspberry-os.git /home/pi/raspberryOS
+sudo -u pi git clone https://github.com/S7eezy/raspberry-os.git /home/pi/raspberryOS
 cd /home/pi/raspberryOS
-pip3 install -r requirements.txt
-tsc
+sudo -u pi pip3 install -r requirements.txt
+sudo -u pi tsc
 
-# Disable getty on tty1 to prevent login prompt interference
-sudo systemctl disable getty@tty1.service
-
-# Reload systemd daemons and enable services
+# Enable and start flaskapp.service
 sudo systemctl daemon-reload
 sudo systemctl enable flaskapp.service
-sudo systemctl enable chromium.service
-
-#echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
-#sudo sed -i '/^gpu_mem=/d' /boot/config.txt
-#echo 'gpu_mem=128' | sudo tee -a /boot/config.txt
+sudo systemctl start flaskapp.service
 
 # Reboot the system
 sudo reboot
